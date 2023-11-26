@@ -150,3 +150,7 @@ for tt = 2:1:N+1
     temp = d\b;
     u(tt,:) = temp';
 end
+%% Wave Energy
+Ei = sum(0.5 * h * (u(1,2:1:N+1) - u(1,1:1:N)) .^ 2);
+Ef = sum(0.5 * h * (u(end,2:1:N+1) - u(end,1:1:N)) .^ 2);
+DeltaE = Ef - Ei
