@@ -1,0 +1,152 @@
+%% Initialisation
+clear all; clc;
+format long
+%% Pre-Processing & B.C.s
+N = 200;
+h = 1/N;
+x = 0:h:1;
+tau = 2.5/N;
+t = 0:tau:2.5;
+
+a = 0.2;
+nu = a*tau/h;
+
+u = zeros(N+1,N+1);
+u(1,:) = sin(100*pi*x(:));
+% u(1,20:1:60) = 1;
+
+%% Upwind Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            u(tt,ii) = u(tt-1,ii) - nu * (u(tt-1,ii) - u(tt-1,end-1));
+            continue
+        end
+        u(tt,ii) = u(tt-1,ii) - nu * (u(tt-1,ii) - u(tt-1,ii-1));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+        end
+    end
+end
+
+%% Lax Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            u(tt,ii) = 0.5*(u(tt-1,ii+1)+u(tt-1,end-1)) -...
+                    0.5*nu * (u(tt-1,ii+1) - u(tt-1,end-1));
+            continue
+        end
+        u(tt,ii) = 0.5*(u(tt-1,ii+1)+u(tt-1,ii-1)) -...
+                    0.5*nu * (u(tt-1,ii+1) - u(tt-1,ii-1));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+        end
+    end
+
+end
+%% Leap Frog
+%Lax
+    for ii = 1:N
+        if ii == 1
+            u(2,ii) = 0.5*(u(1,ii+1)+u(1,end-1)) -...
+                    0.5*nu * (u(1,ii+1) - u(1,end-1));
+            continue
+        end
+        u(2,ii) = 0.5*(u(1,ii+1)+u(1,ii-1)) +...
+                    0.5*nu * (u(1,ii+1) - u(1,ii-1));
+        if ii == N
+            u(2, ii+1) = u(2,1);
+        end
+    end
+
+for tt = 3:1:N+1
+    for ii = 1:N 
+        if ii == 1
+            u(tt,ii) = u(tt-2,ii) + nu * (u(tt-1,ii+1) - u(tt-1,end-1));
+            continue
+        end
+        u(tt,ii) = 0.5*(u(tt-1,ii+1)+u(tt-1,ii-1)) +...
+                    0.5*nu * (u(tt-1,ii+1) - u(tt-1,ii-1));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+        end
+    end
+
+end
+%% Lax-Wendroff Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,end-1)) + 0.5*(nu^2) * ( u(tt-1,end-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+            continue
+        end
+        u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,ii-1)) + 0.5*(nu^2) * ( u(tt-1,ii-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+        end
+    end
+
+end
+%% MacCormack Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            temp1 = u(tt-1,ii) - nu * (u(tt-1,ii+1) - u(tt-1,ii));
+            temp2 = u(tt-1,end-1) - nu * (u(tt-1,ii) - u(tt-1,end-1));
+            u(tt,ii) = 0.5*(u(tt-1,ii) + temp1 - nu*...
+            (temp1 - temp2));
+            continue
+        end
+            temp1 = u(tt-1,ii) - nu * (u(tt-1,ii+1) - u(tt-1,ii));
+            temp2 = u(tt-1,ii-1) - nu * (u(tt-1,ii) - u(tt-1,ii-1));
+            u(tt,ii) = 0.5*(u(tt-1,ii) + temp1 - nu*...
+            (temp1 - temp2));
+        if ii == N
+            u(tt, ii+1) = u(tt,1);
+        end
+    end
+
+end
+%% Crank-Nicholson Scheme
+for tt = 2:1:N+1
+    b = zeros(N+1,1);
+    d = zeros(N+1,N+1);
+    for ii = 1:N+1
+        if ii == 1
+            d(ii,end)   = -nu/4;
+            d(ii,ii)     = 1;
+            d(ii,ii+1)   = nu/4;
+            continue
+        end
+        if ii == N+1
+            d(ii,ii-1)   = -nu/4;
+            d(ii,ii)     = 1;
+            d(ii,1)      = nu/4;
+            break
+        end
+            d(ii,ii-1)     = -nu/4;
+            d(ii,ii)   = 1;
+            d(ii,ii+1)   = nu/4;
+    end
+    for ii = 1:N+1
+        if ii == 1
+            b(ii,1) = 0.25 * (nu * u(tt-1,end-1) +...
+            4*u(tt-1,ii) - nu * u(tt-1,ii+1));
+            continue
+        end
+        if ii == N+1
+            b(ii,1) = 0.25 * (nu * u(tt-1,ii-1) +...
+            4*u(tt-1,ii) - nu * u(tt-1,1));
+            break
+        end 
+            b(ii,1) = 0.25 * (nu * u(tt-1,ii-1) +...
+            4*u(tt-1,ii) - nu * u(tt-1,ii+1));
+    end    
+    temp = d\b;
+    u(tt,:) = temp';
+end
