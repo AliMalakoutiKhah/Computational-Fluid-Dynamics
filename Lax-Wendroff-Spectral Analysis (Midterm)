@@ -79,7 +79,7 @@ elseif z6 == 2
     v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
 elseif z6 == 3
     u(1,15:39) = 1;
-    v(1,15:39) = u(1,15:39).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+    v(1,15:39) = u(1,15:39).*(cos((15:39).*pi)-1i*sin((15:39).*pi));
 end
 
 % Lax-Wendroff Scheme
@@ -133,7 +133,7 @@ elseif z6 == 2
     v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
 elseif z6 == 3
     u(1,15:39) = 1;
-    v(1,15:39) = u(1,15:39).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+    v(1,15:39) = u(1,15:39).*(cos((15:39).*pi)-1i*sin((15:39).*pi));
 end
 
 % Lax-Wendroff Scheme
