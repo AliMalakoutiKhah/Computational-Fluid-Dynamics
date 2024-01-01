@@ -1,0 +1,163 @@
+function LW(z1,z2,z3,z4,z5,z6)
+
+x0 = z1; xl = z2; N = z3;
+h = (xl-x0)/N;
+x = 0:h:1;
+CFL = z4; a = z5;
+tau = (CFL*h)/a;
+t = 0:tau:tau*N;
+nu = (a*tau)/h;
+u = zeros(N+1,N+1);
+
+if z6 == 1
+    u(1,:) = sin(2*pi*x(:));
+elseif z6 == 2
+    u(1,:) = sin(100*pi*x(:));
+elseif z6 == 3
+    u(1,15:39) = 1;
+end
+
+% Lax-Wendroff Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,end-1)) + 0.5*(nu^2) * ( u(tt-1,end-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+            continue
+        end
+        u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,ii-1)) + 0.5*(nu^2) * ( u(tt-1,ii-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+        end
+    end
+
+end
+min(u(N+1,:))
+max(u(N+1,:))
+%Plotting
+plot(x,u(N+1,:)); xlabel("x"); ylabel("u");
+gravstr = sprintf("CFL = %f - t = %f", CFL, tau*N);
+legend(gravstr)
+
+end
+
+function Harmonics(z1,z2,z3)
+
+x0 = z1; xl = z2; N = z3;
+h = (xl-x0)/N;
+x = 0:h:1;
+k = zeros(N+1);
+k(2:N+1)=(1:N)*(pi)/(N*h);
+
+plot(1:N+1,k(1:N+1)); xlabel("j"); ylabel("k");
+title("Wave Number")
+
+end
+
+function LWH(z1,z2,z3,z4,z5,z6)
+
+x0 = z1; xl = z2; N = z3;
+h = (xl-x0)/N;
+x = 0:h:1;
+CFL = z4; a = z5;
+tau = (CFL*h)/a;
+t = 0:tau:tau*N;
+nu = (a*tau)/h;
+u = zeros(N+1,N+1);
+v = zeros(N+1,N+1);
+k = zeros(N+1);
+k(2:N+1)=(1:N)*(pi)/(N*h);
+
+if z6 == 1
+    u(1,:) = sin(2*pi*x(:));
+    v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+elseif z6 == 2
+    u(1,:) = sin(100*pi*x(:));
+    v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+elseif z6 == 3
+    u(1,15:39) = 1;
+    v(1,15:39) = u(1,15:39).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+end
+
+% Lax-Wendroff Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,end-1)) + 0.5*(nu^2) * ( u(tt-1,end-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+            v(tt,ii) = u(tt,ii)*(cos(ii*pi)-1i*sin(ii*pi));
+            continue
+        end
+            u(tt,ii) = u(tt-1,ii) -0.5*nu * (u(tt-1,ii+1) -...
+            u(tt-1,ii-1)) + 0.5*(nu^2) * ( u(tt-1,ii-1) -2*...
+            u(tt-1,ii) + u(tt-1,ii+1));
+            v(tt,ii) = u(tt,ii)*(cos(ii*pi)-1i*sin(ii*pi));
+        if ii == N
+            u(tt,ii+1) = u(tt,1);
+            v(tt,ii+1) = u(tt,ii+1)*(cos((ii+1)*pi)-1i*sin((ii+1)*pi));
+        end
+    end
+end
+
+%Plotting
+plot(k(1:N+1),abs(v(N+1,:))); xlabel("Wave Number"); ylabel("Amplitude of the Harmonic");
+gravstr = sprintf("CFL = %f - t = %f", CFL, tau*N);
+legend(gravstr)
+
+end
+
+function LWG(z1,z2,z3,z4,z5,z6)
+
+x0 = z1; xl = z2; N = z3;
+h = (xl-x0)/N;
+x = 0:h:1;
+CFL = z4; a = z5;
+tau = (CFL*h)/a;
+t = 0:tau:tau*N;
+nu = (a*tau)/h;
+u = zeros(N+1,N+1);
+v = zeros(N+1,N+1);
+k = zeros(N+1);
+k(2:N+1)=(1:N)*(pi)/(N*h);
+phi = (0:N).*(pi/N);
+
+if z6 == 1
+    u(1,:) = sin(2*pi*x(:));
+    v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+elseif z6 == 2
+    u(1,:) = sin(100*pi*x(:));
+    v(1,:) = u(1,:).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+elseif z6 == 3
+    u(1,15:39) = 1;
+    v(1,15:39) = u(1,15:39).*(cos((1:N+1).*pi)-1i*sin((1:N+1).*pi));
+end
+
+% Lax-Wendroff Scheme
+for tt = 2:1:N+1
+    for ii = 1:N
+        if ii == 1
+            v(tt,ii) = v(tt-1,ii)*(1-(CFL^2)*(1-cos((ii*pi)/N))-1i*CFL*sin((ii*pi)/N));
+            continue
+        end
+            v(tt,ii) = v(tt-1,ii)*(1-(CFL^2)*(1-cos((ii*pi)/N))-1i*CFL*sin((ii*pi)/N));
+        if ii == N
+            v(tt,ii+1) = v(tt,1);
+        end
+    end
+end
+
+%Plotting
+plot(x,abs(v(N+1,:))); xlabel("x"); ylabel("Amplitude of the Harmonic");
+gravstr = sprintf("CFL = %f - t = %f", CFL, tau*N);
+legend(gravstr)
+hold on
+figure(2)
+plot(phi.*(180/pi),abs(v(2:N+1,:))./abs(v(1:N,:))); xlabel("\phi"); ylabel("Amplification Factor");
+gravstr = sprintf("CFL = %f - t = %f", CFL, tau*N);
+legend(gravstr)
+
+end
