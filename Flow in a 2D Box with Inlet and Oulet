@@ -144,16 +144,16 @@ end
 %% Contours and Plots
 % u Velocity at Various Sections
 figure(2);
-plot(u_physical(:,n_pointsc/4),1-y, 'LineWidth', 1)
+plot(u_physical(:,n_pointsc/2),1-y, 'LineWidth', 1)
 xlabel('u')
 ylabel('y')
-title("u-y at x = 0.25")
+title("u-y at x = L/2")
 % v Velocity at Various Sections
 figure(6)
-plot(v_physical(n_pointsr/2,:),1-x, 'LineWidth', 1)
+plot(1-x,v_physical(n_pointsr/2,:), 'LineWidth', 1)
 xlabel('x')
 ylabel('v')
-title("x-v at y = 0.5")
+title("x-v at y = H/2")
 % Contour and vector visuals
 x_dom = ((1:n_pointsc)-1).*h;
 y_dom = 1-((1:n_pointsr)-1).*h;
