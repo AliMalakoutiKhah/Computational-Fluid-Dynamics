@@ -1,0 +1,193 @@
+clear all
+close all
+clc
+
+%% Problem Patametres
+aspect_ratio = 1;                    %H/L = 0.5, 1 , 2
+n_pointsc = 52*2;                    %number of points (columns)
+n_pointsr = n_pointsc * aspect_ratio;%number of points (rows)
+dom_length = 1;
+h = dom_length/(n_pointsc-1);        %Step
+x = 0:h:dom_length;                  %X domain span
+y = 0:h:dom_length*aspect_ratio;     %Y domain span
+dt = 0.00001;                         %Time advancement
+Re = 500;                            %Reynolds number
+acc = 4.5;                           %Artificial Compressibility Coefficient
+
+%% Initialisation
+%Final (Physical) Collocated Variables
+u_physical(n_pointsr,n_pointsc)=0;
+v_physical(n_pointsr,n_pointsc)=0;
+p_physical(n_pointsr,n_pointsc)=0;
+u_physical(2:n_pointsr/2,1)=1;    %Inlet
+p_physical(2:n_pointsr/2,1:2)=1;  %Inlet
+
+%Staggered variables
+u(n_pointsr+1,n_pointsc)=0;
+v(n_pointsr,n_pointsc+1)=0;
+P(n_pointsr+1,n_pointsc+1)=0;
+u(2:n_pointsr/2,1)=1;             %Inlet
+P(2:n_pointsr/2,1:2)=1;           %Inlet
+
+u_new(n_pointsr+1,n_pointsc)=0;
+v_new(n_pointsr,n_pointsc+1)=0;
+p_new(n_pointsr+1,n_pointsc+1)=0;
+u_new(2:n_pointsr/2,1)=1;          %Inlet
+p_new(2:n_pointsr/2,1:2)=1;        %Inlet
+%% Solver
+error = 1;
+kk = 0;                                %Number of Iterations
+error_the = 5e-4;                      %final required error residual
+figure(1);                             %for error monitoring
+
+while error > error_the
+    % x-Momentum - Interior Points
+    for i = 2:n_pointsr
+        for j = 2:n_pointsc - 1
+            Px = -(P(i,j+1) - P(i,j))/h;
+            Dx = (1/Re)*((u(i+1,j) - 2*u(i,j) + u(i-1,j))/(h*h) + (u(i,j+1) - 2*u(i,j) + u(i,j-1))/(h*h));
+            Cx = ((0.5*(u(i,j)+u(i,j+1)))^2 - (0.5*(u(i,j)+u(i,j-1)))^2)/h;
+            Cy = ((0.25*(u(i,j)+u(i-1,j))*(v(i-1,j)+v(i-1,j+1))) - (0.25*(u(i,j)+u(i+1,j))*(v(i,j)+v(i,j+1))))/h;
+            u_new(i,j) = u(i,j) + dt*(Dx - Cx - Cy + Px);
+        end
+    end
+    
+    % x-Momentum - Boundary Conditions
+    u_new(1,2:n_pointsc) = - u_new(2,2:n_pointsc);       %Top Wall
+    u_new(n_pointsr + 1,:) = -u_new(n_pointsr,:);        %Bottom Wall
+    u_new((n_pointsr /2) + 1:n_pointsr,1) = 0;           %Left Wall
+    u_new(2:n_pointsr /2,n_pointsc) = 0;                 %Right Wall
+    M_in = sum(u_new(2:n_pointsr /2,1));                 %Inlet Mass
+    M_out = sum(u_new((n_pointsr /2) + 1:n_pointsr,n_pointsc));%outlet Mass*****
+    M_ratio = 1;%M_in/M_out;
+%     if kk >= 20000
+%         M_ratio = M_in/M_out;
+%     end
+    u_new((n_pointsr /2) + 1:n_pointsr,n_pointsc) = u_new((n_pointsr /2) + 1:n_pointsr,n_pointsc-1)*M_ratio;%Outlet
+    
+    
+    % y-Momentum - Interior Points
+    for i = 2:n_pointsr - 1
+        for j = 2:n_pointsc
+            Py = -(P(i,j) - P(i+1,j))/h;
+            Dy = (1/Re)*((v(i+1,j) - 2*v(i,j) + v(i-1,j))/(h*h) + (v(i,j+1) - 2*v(i,j) + v(i,j-1))/(h*h));
+            Cy = ((0.5*(v(i,j)+v(i-1,j)))^2 - (0.5*(v(i,j)+v(i+1,j)))^2)/h;
+            Cx = ((0.25*(u(i,j)+u(i+1,j))*(v(i,j)+v(i,j+1))) - (0.25*(u(i,j-1)+u(i+1,j-1))*(v(i,j)+v(i,j-1))))/h;
+            v_new(i,j) = v(i,j) + dt*(Dy - Cx - Cy + Py);
+        end
+    end
+    
+    % y-Momentum - Boundary Conditions
+    v_new(2:n_pointsr/2,1) = 0;                                              %Inlet
+    v_new(n_pointsr/2:n_pointsr - 1,1) = -v_new(n_pointsr/2:n_pointsr - 1,2);%Left Wall
+    v_new(2:n_pointsr/2,n_pointsc + 1) = -v_new(2:n_pointsr/2,n_pointsc);    %Right Wall
+    v_new(n_pointsr/2:n_pointsr - 1,n_pointsc + 1) = 0;                       %Outlet
+    v_new(1,2:n_pointsc) = 0;                                                %Top Wall
+    v_new(n_pointsr,2:n_pointsc) = 0;                                        %Bottom Wall
+    
+    % Continuity - Interior Points
+    for i = 2:n_pointsr
+        for j = 2:n_pointsc
+            p_new(i,j) = P(i,j) - acc*dt*(u(i,j) - u(i,j-1) + v(i-1,j) - v(i,j))/h;
+        end
+    end
+    
+    % Continuity - Boundary Conditions
+    p_new(2:n_pointsr /2,1) = p_new(2:n_pointsr /2,2);     %Inlet
+    p_new(1,:) = p_new(2,:);                               %Top Wall
+    p_new(2:n_pointsr /2,n_pointsc + 1) =...
+    p_new(2:n_pointsr /2,n_pointsc);                       %Right Wall
+    p_new((n_pointsr /2) + 1:n_pointsr,n_pointsc + 1) = 0; %Outlet
+    p_new((n_pointsr /2) + 1:n_pointsr,1) =...
+    p_new((n_pointsr /2) + 1:n_pointsr,2);                 %Left Wall
+    p_new(n_pointsr + 1,:) = p_new(n_pointsr,:);           %Bottom Wall
+    
+    % Continuity residual as error measure
+    error = 0;
+    for i = 2:n_pointsr - 1
+        for j = 2:n_pointsc - 1
+            error = error + abs(p_new(i,j) - P(i,j) + acc*dt*(u_new(i,j) - u_new(i,j-1) + v_new(i-1,j) - v_new(i,j))/h);
+        end
+    end
+    
+    % Error Monitoring 
+    if(rem(kk, 2000)) == 0
+       figure(1);
+       semilogy(kk, error, '-ko')
+       hold on
+       xlabel('Iterations')
+       ylabel('Residual Error')
+    end
+    
+    % Updating the Fields
+    u = u_new;
+    v = v_new;
+    P = p_new;
+    kk = kk + 1;
+%   ii = 0;
+%   delta = delta + 0.00001;
+%     if iterations > (2+ii)*1e5
+%         delta = delta + 1;
+%         ii = ii + 1;
+%     end
+end
+
+%% Calculating the Physical (Collocated) Variables
+for i = 1:n_pointsr
+    for j = 1:n_pointsc
+        u_physical(i,j) = 0.5*(u(i,j) + u(i+1,j));
+        v_physical(i,j) = 0.5*(v(i,j) + v(i,j+1));
+        p_physical(i,j) = 0.25*(P(i,j) + P(i,j+1) + P(i+1,j) + P(i+1,j+1));
+    end
+end
+
+%% Contours and Plots
+% u Velocity at Various Sections
+figure(2);
+plot(u_physical(:,n_pointsc/4),1-y, 'LineWidth', 1)
+xlabel('u')
+ylabel('y')
+title("u-y at x = 0.25")
+% v Velocity at Various Sections
+figure(6)
+plot(v_physical(n_pointsr/2,:),1-x, 'LineWidth', 1)
+xlabel('x')
+ylabel('v')
+title("x-v at y = 0.5")
+% Contour and vector visuals
+x_dom = ((1:n_pointsc)-1).*h;
+y_dom = 1-((1:n_pointsr)-1).*h;
+[X,Y] = meshgrid(x_dom,y_dom);
+% v Contour
+figure(4);
+axis equal;
+contourf(X,Y,v_physical, 21, 'LineStyle', 'none')
+colorbar
+colormap('jet')
+title("v")
+xlabel('x')
+ylabel('y')
+% u contour
+figure(9)
+axis equal;
+contourf(X,Y,u_physical, 21, 'LineStyle', 'none')
+colorbar
+colormap('jet')
+title("u")
+xlabel('x')
+ylabel('y')
+% Velocity Vector
+figure(5);
+hold on
+axis equal;
+title("Velocity Vector")
+quiver(X, Y, u_physical, v_physical, 5, 'k')
+% Streamlines
+figure(3);
+hold on
+a = 100;
+ystart = linspace(0,1,a);
+xstart = zeros(1, a);
+axis equal;
+title("Streamlines")
+streamlines = streamline(X, Y, u_physical, v_physical, xstart,ystart);
